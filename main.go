@@ -7,22 +7,18 @@ import (
 	"strings"
 )
 
-var musicPaths   []string
+var musicPaths []string
 
 func main() {
-	pathAbsolute,err := filepath.Abs("~/Musicas")
+	expandedPath := filepath.Join(os.Getenv("HOME"), "Musicas")
 
-	if err != nil{
-		fmt.Println("Erro ao converter caminho absoluto: ", err)
-		return 
-	}
-	
-	ListAllSongs(pathAbsolute)
+	ListAllSongs(expandedPath)
 
 	fmt.Println("Músicas disponíveis:")
- 	for i, path := range musicPaths {
-  		fmt.Printf("%d. %s\n", i+1, filepath.Base(path))
- 	}
+	for i, path := range musicPaths {
+		fmt.Printf("%d. %s\n", i+1, filepath.Base(path))
+	}
+
 	args := os.Args
 	if len(args) < 2 {
 		fmt.Println("Uso: mtsound <comando>")
@@ -43,32 +39,26 @@ func main() {
 	}
 }
 
-func isMusicFile(fileName string) bool{
+func isMusicFile(fileName string) bool {
 	extensions := []string{".mp3", ".mp4", ".m4a"}
- 	for _, ext := range extensions {
-  	if strings.HasSuffix(fileName, ext) {
-   		return true
-  	}
- }
- return false
+	for _, ext := range extensions {
+		if strings.HasSuffix(fileName, ext) {
+			return true
+		}
+	}
+	return false
 }
 
-
 func ListAllSongs(path string) {
-	expandedPath := filepath.Join(os.Getenv("HOME"), "Musicas")
-
-	fmt.Println(expandedPath)
-	files, err := os.ReadDir(expandedPath)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		fmt.Println("Erro ao listar os arquivos:", err)
 		return
 	}
 
-	var musicPaths []string
-
 	for _, file := range files {
 		if !file.IsDir() && isMusicFile(file.Name()) {
-			musicPaths = append(musicPaths, filepath.Join(expandedPath, file.Name()))
+			musicPaths = append(musicPaths, filepath.Join(path, file.Name()))
 		}
 	}
 
@@ -76,5 +66,4 @@ func ListAllSongs(path string) {
 		fmt.Println("Nenhuma música encontrada no diretório.")
 		return
 	}
-
 }
