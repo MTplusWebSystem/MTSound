@@ -67,3 +67,15 @@ func ListAllSongs(path string) {
 		return
 	}
 }
+func Start(){
+	fmt.Println("Inicia a reprodução da música atual.")
+}
+func Stop(){
+	fmt.Println("Para a reprodução da música atual.")
+}
+func Next(){
+	fmt.Println("Muda para a próxima música da reprodução. ")
+}
+func Back(){
+	fmt.Println("Volta a reprodução da música anterior.")
+}
