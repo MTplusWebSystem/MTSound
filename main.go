@@ -48,9 +48,11 @@ func main() {
 		Stop()
 	case "next-":
 		fmt.Println("Comando de voltar para música anterior")
+		Shutdown()
 		Back()
 	case "next+":
 		fmt.Println("Comando de ir para próxima música")
+		Shutdown()
 		Next()
 	default:
 		fmt.Println("Comando inválido! Use 'start', 'stop', 'break', 'next+' ou 'next-'")
@@ -104,9 +106,15 @@ func Stop() {
 		fmt.Println("Nenhuma música em reprodução.")
 		return
 	}
-	playerCmd.Process.Signal(syscall.SIGSTOP)
-	fmt.Println("Reprodução pausada.")
+
+	err := playerCmd.Process.Signal(syscall.SIGINT)
+	if err != nil {
+		fmt.Println("Erro ao pausar a reprodução:", err)
+		return
+	}
+
 	playerPaused = true
+	fmt.Println("Reprodução pausada.")
 }
 
 func Play() {
