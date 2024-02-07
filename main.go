@@ -3,11 +3,21 @@ package main
 import (
 	"fmt"
 	"os"
+	"path"
+	"path/filepath"
+	"strings"
 )
 
 func main() {
-	args := os.Args
+	pathAbsolute,err := filepath.Abs("~/Musicas")
 
+	if err != nil{
+		fmt.Println("Erro ao converter caminho absoluto: ", err)
+		return 
+	}
+	
+
+	args := os.Args
 	if len(args) < 2 {
 		fmt.Println("Uso: mtsound <comando>")
 		return
@@ -25,4 +35,14 @@ func main() {
 	default:
 		fmt.Println("Comando inválido! Use 'start', 'break', 'next+' ou 'next-'")
 	}
+}
+
+func isMusicFile(fileName string) bool{
+	extensions := []string{".mp3", ".mp4", ".m4a"}
+ 	for _, ext := range extensions {
+  	if strings.HasSuffix(fileName, ext) {
+   		return true
+  	}
+ }
+ return false
 }
