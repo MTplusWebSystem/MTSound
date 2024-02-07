@@ -48,11 +48,9 @@ func main() {
 		Stop()
 	case "next-":
 		fmt.Println("Comando de voltar para música anterior")
-		Shutdown()
 		Back()
 	case "next+":
 		fmt.Println("Comando de ir para próxima música")
-		Shutdown()
 		Next()
 	default:
 		fmt.Println("Comando inválido! Use 'start', 'stop', 'break', 'next+' ou 'next-'")
@@ -134,21 +132,28 @@ func Shutdown() {
 }
 
 func Next() {
-	fmt.Println("Muda para a próxima música da reprodução. ")
-	if musicIndex < len(musicPaths)-1 {
-		musicIndex++
-	} else {
-		musicIndex = 0
-	}
-	Start(musicIndex)
+    fmt.Println("Muda para a próxima música da reprodução.")
+    if playerPaused {
+        Play()
+    }
+    if musicIndex < len(musicPaths)-1 {
+        musicIndex++
+    } else {
+        musicIndex = 0
+    }
+    Start(musicIndex)
 }
 
 func Back() {
-	fmt.Println("Volta a reprodução da música anterior.")
-	if musicIndex > 0 {
-		musicIndex--
-	} else {
-		musicIndex = len(musicPaths) - 1
-	}
-	Start(musicIndex)
+    fmt.Println("Volta a reprodução da música anterior.")
+    if playerPaused {
+        Play()
+    }
+    if musicIndex > 0 {
+        musicIndex--
+    } else {
+        musicIndex = len(musicPaths) - 1
+    }
+    Start(musicIndex)
 }
+
