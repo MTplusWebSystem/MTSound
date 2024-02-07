@@ -6,12 +6,14 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 )
 
 var (
 	musicIndex   int
-	musicPaths   []string
+	musicMap     = make(map[int]string)
+	musicMapLock sync.Mutex
 	playerCmd    *exec.Cmd
 	playerPaused bool
 )
@@ -22,7 +24,7 @@ func main() {
 	ListAllSongs(expandedPath)
 
 	fmt.Println("Músicas disponíveis:")
-	for i, path := range musicPaths {
+	for i, path := range musicMap {
 		fmt.Printf("%d. %s\n", i+1, filepath.Base(path))
 	}
 
@@ -36,7 +38,7 @@ func main() {
 	case "start":
 		fmt.Println("Comando de Iniciar")
 		if playerCmd == nil || playerCmd.Process == nil {
-			Start(musicIndex)
+			Start(0)
 		} else {
 			Stop()
 		}
@@ -45,7 +47,7 @@ func main() {
 		Shutdown()
 	case "break":
 		fmt.Println("Comando de Pausar")
-		Stop()
+		Pause()
 	case "next-":
 		fmt.Println("Comando de voltar para música anterior")
 		Back()
@@ -76,11 +78,11 @@ func ListAllSongs(path string) {
 
 	for _, file := range files {
 		if !file.IsDir() && isMusicFile(file.Name()) {
-			musicPaths = append(musicPaths, filepath.Join(path, file.Name()))
+			musicMap[len(musicMap)] = filepath.Join(path, file.Name())
 		}
 	}
 
-	if len(musicPaths) == 0 {
+	if len(musicMap) == 0 {
 		fmt.Println("Nenhuma música encontrada no diretório.")
 		return
 	}
@@ -88,8 +90,10 @@ func ListAllSongs(path string) {
 
 func Start(index int) {
 	Stop()
-	fmt.Println("Inicia a reprodução da música atual.")
-	playerCmd = exec.Command("ffplay", "-nodisp", "-autoexit", musicPaths[index])
+	musicMapLock.Lock()
+	defer musicMapLock.Unlock()
+	fmt.Println("Inicia a reprodução da música atual:", filepath.Base(musicMap[index]))
+	playerCmd = exec.Command("ffplay", "-nodisp", "-autoexit", musicMap[index])
 	playerCmd.Stdout = nil
 	playerCmd.Stderr = nil
 
@@ -105,7 +109,22 @@ func Stop() {
 		return
 	}
 
-	err := playerCmd.Process.Signal(syscall.SIGINT)
+	err := playerCmd.Process.Signal(syscall.SIGTERM)
+	if err != nil {
+		fmt.Println("Erro ao parar a reprodução:", err)
+		return
+	}
+
+	playerPaused = false
+}
+
+func Pause() {
+	if playerCmd == nil || playerCmd.Process == nil || playerPaused {
+		fmt.Println("Nenhuma música reproduzindo ou já pausada.")
+		return
+	}
+
+	err := playerCmd.Process.Signal(syscall.SIGSTOP)
 	if err != nil {
 		fmt.Println("Erro ao pausar a reprodução:", err)
 		return
@@ -115,16 +134,6 @@ func Stop() {
 	fmt.Println("Reprodução pausada.")
 }
 
-func Play() {
-	if playerCmd == nil || playerCmd.Process == nil || !playerPaused {
-		fmt.Println("Nenhuma música pausada.")
-		return
-	}
-	playerCmd.Process.Signal(syscall.SIGCONT)
-	fmt.Println("Reprodução retomada.")
-	playerPaused = false
-}
-
 func Shutdown() {
 	fmt.Println("Encerrando a reprodução.")
 	cmd := exec.Command("pkill", "ffplay")
@@ -132,28 +141,29 @@ func Shutdown() {
 }
 
 func Next() {
-    fmt.Println("Muda para a próxima música da reprodução.")
-    if playerPaused {
-        Play()
-    }
-    if musicIndex < len(musicPaths)-1 {
-        musicIndex++
-    } else {
-        musicIndex = 0
-    }
-    Start(musicIndex)
+	if playerCmd != nil && playerCmd.Process != nil {
+		Stop()
+	}
+	musicMapLock.Lock()
+	defer musicMapLock.Unlock()
+	Start((getCurrentIndex() + 1) % len(musicMap))
 }
 
 func Back() {
-    fmt.Println("Volta a reprodução da música anterior.")
-    if playerPaused {
-        Play()
-    }
-    if musicIndex > 0 {
-        musicIndex--
-    } else {
-        musicIndex = len(musicPaths) - 1
-    }
-    Start(musicIndex)
+	if playerCmd != nil && playerCmd.Process != nil {
+		Stop()
+	}
+	musicMapLock.Lock()
+	defer musicMapLock.Unlock()
+	index := getCurrentIndex() - 1
+	if index < 0 {
+		index = len(musicMap) - 1
+	}
+	Start(index)
 }
 
+func getCurrentIndex() int {
+	musicMapLock.Lock()
+	defer musicMapLock.Unlock()
+	return musicIndex
+}
