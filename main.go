@@ -55,28 +55,31 @@ func main() {
         fmt.Println("Comando de Continuar")
         cmd := exec.Command("pkill", "-CONT", "vlc")
         cmd.Run()
-    case "next-":
+	case "next-":
+		fmt.Println("Comando de voltar para música anterior")
 		kill := exec.Command("pkill", "vlc")
-        kill.Run()
-        fmt.Println("Comando de voltar para música anterior")
-		if variables.Indicator == 0 { 
+		kill.Run()
+		if variables.Indicator == 0 {
 			variables.Indicator = len(musicMap) - 1
+		} else {
+			variables.Indicator--
 		}
-		cmd := exec.Command("vlc", "--intf", "dummy", musicMap[0])
-        cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-        cmd.Start()
-    case "next+":
+		cmd := exec.Command("vlc", "--intf", "dummy", musicMap[variables.Indicator])
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		cmd.Start()
+	
+	case "next+":
+		fmt.Println("Comando de ir para próxima música")
 		kill := exec.Command("pkill", "vlc")
-        kill.Run()
-        fmt.Println("Comando de ir para próxima música")
-		if variables.Indicator == len(musicMap) - 1 { 
+		kill.Run()
+		if variables.Indicator == len(musicMap)-1 {
 			variables.Indicator = 0
-		}else{
+		} else {
 			variables.Indicator++
 		}
-		cmd := exec.Command("vlc", "--intf", "dummy", musicMap[0])
-        cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-        cmd.Start()
+		cmd := exec.Command("vlc", "--intf", "dummy", musicMap[variables.Indicator])
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		cmd.Start()	
     default:
         fmt.Println("Comando inválido! Use 'start', 'stop', 'pause', 'next+' ou 'next-'")
     }
